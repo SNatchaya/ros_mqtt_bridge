@@ -1,0 +1,20 @@
+{
+    "topic":[
+        "/Damping",
+        "/GaitStep",
+        "/Joint_angles",
+        "/LPFSpeed",
+        "/Speed",
+        "/Stiffness",
+        "/timestamp"
+    ],
+    "message_type":[
+        "Float32MultiArray",
+        "Int32MultiArray",
+        "Float32MultiArray",
+        "Float32MultiArray",
+        "Float32MultiArray",
+        "Float32MultiArray",
+        "String"
+    ]
+}

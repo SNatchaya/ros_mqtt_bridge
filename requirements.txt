@@ -1,0 +1,10 @@
+numpy==1.23.4
+wheel==0.34.2
+paho_mqtt==1.5.0
+pyfiglet==0.8.post1
+rospy==1.15.14
+termcolor==2.1.0
+pyyaml==5.3.1
+rospkg==1.4.0
+netifaces==0.10.4
+
