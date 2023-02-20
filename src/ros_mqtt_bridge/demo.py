@@ -27,8 +27,8 @@ class Demo():
     
     def start_demo(self):
         # Run `roscore` 
-        self.roscore_chr     = input('Would you like to run the `roscore` on your computer? (y/n) ')
-        self._run_roscore()
+        # self.roscore_chr     = input('Would you like to run the `roscore` on your computer? (y/n) ')
+        # self._run_roscore()
 
         # Condition if you would like to run the MQTT broker or not
         self.mqtt_chr        = input('Would you like to run the `Mosquitto` on your computer? (y/n) ')
@@ -45,29 +45,43 @@ class Demo():
         rospy.init_node('bridge_node', anonymous=True)
 
         print('\n--------------------------------- Start the ROS-MQTT bridge demo ---------------------------------\n')
-        print('Note : Press [s] and enter the enter button to stop the process, and press [Ctrl+C] in other terminal to stop the operation. \n')
+        print('Note : Press [q] and enter the enter button to stop the process, and press [Ctrl+C] in other terminal to stop the operation. \n')
 
         # In auto-detect case
-        self.t1 = RosToMqttBridge(host=self.mqtt_host)
-        # self.t2 = MqttToRosBridge(host=self.mqtt_host, topic=['/sub'])
+        # self.t1 = RosToMqttBridge(host=self.mqtt_host)
+        
 
         # In manual case
-        # # Load the JSON file that contains the topics' names and message types of each topic.
-        # self.topic = json.load(open(self.path + '/src/RosMqttBridge/topic.json'))
-        # self.t1 = RosToMqttBridge(host=self.mqtt_host, topic=self.topic)
         
+        self.t          = dict()
+        # # Load the JSON file that contains the topics' names and message types of each topic.
+        self.topic_ros  = json.load(open(self.path + '/src/ros_mqtt_bridge/topic2.json'))
+        self.t1 = RosToMqttBridge(host=self.mqtt_host, topic=self.topic_ros)
         self.t1.start()
-        # self.t2.start()
+
+        # self.topic_mqtt = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6']
+        # self.t['Mqtt-to-Ros'] = MqttToRosBridge(host=self.mqtt_host, topic=self.topic_mqtt, ray_state=True)
+        
+        # for thread in list(self.t.keys()):
+        #     self.t[thread].start()
       
     def stop_demo(self):
         # after stopping demo, it will stop bridge as well.
-        self.t1.disconnect()
-        # self.t2.disconnect()
+        
+        self.t1.stop_actor()
+        time.sleep(1)
+
+        for i in self.topic_ros['topic']:
+            print(f'{i}  : {self.t1.get_data(i)}')
+
+        self.t1.kill_ray()
+        
+        # self.t1.kill_ray()
         sys.exit()
 
 if __name__ == '__main__':
     demo = Demo()
     demo.start_demo()
     st = input('')
-    if st == 's':
+    if st == 'q':
         demo.stop_demo()

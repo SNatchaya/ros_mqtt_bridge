@@ -6,10 +6,8 @@
         "/JointCmd",
         "/LPFSpeed",
         "/Stiffness",
-        "/Torque_drive",
-        "/Torque_ff",
-        "/Torque_grav",
-        "/imu/data"
+        "/TorqueCmd",
+        "/TorqueDrive"
     ],
     "message_type":[
         "std_msgs/Float32MultiArray",
@@ -19,8 +17,6 @@
         "std_msgs/Float32MultiArray",
         "std_msgs/Float32MultiArray",
         "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "sensor_msgs/Imu"
+        "std_msgs/Float32MultiArray"
     ]
 }
