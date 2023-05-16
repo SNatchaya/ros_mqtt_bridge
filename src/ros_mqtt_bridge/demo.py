@@ -8,8 +8,9 @@ from ros_mqtt_bridge.bridge import *
 
 class Demo():
     def __init__(self):
-        self.path = os.getcwd()
-        print(self.path)
+        self.PATH       = os.getcwd()
+        self.filename   = '/topic.json'
+        print(self.PATH)
         
     def _run_roscore(self):
         if self.roscore_chr == 'y':
@@ -27,19 +28,21 @@ class Demo():
     
     def start_demo(self):
         # Run `roscore` 
-        # self.roscore_chr     = input('Would you like to run the `roscore` on your computer? (y/n) ')
-        # self._run_roscore()
+        self.roscore_chr     = input('Would you like to run the `roscore` on your computer? (y/n) ')
+        self._run_roscore()
 
         # Condition if you would like to run the MQTT broker or not
         self.mqtt_chr        = input('Would you like to run the `Mosquitto` on your computer? (y/n) ')
         self._run_mosquitto()
+        # self.mqtt_host = '192.168.1.6'
 
         self.start_bridge()
     
     def start_bridge(self):
-
-        # subprocess.Popen(["gnome-terminal", "--", "bash", "demo_script.sh"], cwd=self.path + '/scripts')
-        # time.sleep(2)
+        time.sleep(1)
+        subprocess.Popen(["gnome-terminal", "--", "bash", "demo_script.sh"], cwd=self.PATH + '/src/ros_mqtt_bridge/scripts')
+        time.sleep(3)
+        
 
         # Initial the bridge node namely 'bridge_node'
         rospy.init_node('bridge_node', anonymous=True)
@@ -55,12 +58,14 @@ class Demo():
         
         self.t          = dict()
         # # Load the JSON file that contains the topics' names and message types of each topic.
-        self.topic_ros  = json.load(open(self.path + '/src/ros_mqtt_bridge/topic2.json'))
+        self.topic_ros  = json.load(open(self.PATH + '/src/ros_mqtt_bridge/' +self.filename))
         self.t1 = RosToMqttBridge(host=self.mqtt_host, topic=self.topic_ros)
         self.t1.start()
 
         # self.topic_mqtt = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6']
         # self.t['Mqtt-to-Ros'] = MqttToRosBridge(host=self.mqtt_host, topic=self.topic_mqtt, ray_state=True)
+        self.t2 = MqttToRosBridge(host=self.mqtt_host, topic=['/sub'], ray_state=True)
+        self.t2.start()
         
         # for thread in list(self.t.keys()):
         #     self.t[thread].start()
@@ -82,6 +87,7 @@ class Demo():
 if __name__ == '__main__':
     demo = Demo()
     demo.start_demo()
+    
     st = input('')
     if st == 'q':
         demo.stop_demo()

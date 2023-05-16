@@ -1,26 +1,17 @@
 {
+
     "topic":[
-        "/Damping",
-        "/FootPressure",
-        "/JointAngles",
-        "/JointCmd",
-        "/LPFSpeed",
-        "/Stiffness",
-        "/Torque_drive",
-        "/Torque_ff",
-        "/Torque_grav",
-        "/imu/data"
+        "/exvis/timeStampCAN",
+        "/exvis/jointAngle",
+        "/exvis/motorTorque",
+        "/exvis/jointTorque",
+        "/exvis/footSwitch"
     ],
     "message_type":[
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "std_msgs/Float32MultiArray",
-        "sensor_msgs/Imu"
+        "std_msgs/String",
+        "std_msgs/Int32MultiArray",
+        "std_msgs/Int32MultiArray",
+        "std_msgs/Int32MultiArray",
+        "std_msgs/Int32MultiArray"
     ]
 }

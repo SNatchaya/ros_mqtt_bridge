@@ -31,21 +31,24 @@ def search(lst, condition) -> bool:
 @ray.remote(num_cpus=1)     
 class _RosToMqttBridge_(object):
     def __init__(self, host:str, topic:str, message_pkg:str, message_lib:str, color:str, max_length:int):
-        name        = topic.split('/')[-1]
-        node_name   = ('_').join([name, 'node'])
-        client_name = ('_').join([name, 'client'])
+        if topic == '/imu/data':
+            name        = 'imuData'
+        else:
+            name = topic.split('/')[-1]
+            
+        node_name   = ('_').join([name, 'bridge_node'])
+        client_name = ('_').join([name, 'bridge_client'])
         rospy.init_node(node_name, anonymous=True)
         # Mqtt variables
         self.host   = host
-        self.port   = 1883
+        self.PORT   = 1883
 
         self.color              = color
         self.max_length         = max_length
-        self.stop_thread_flag   = False
         
         # Create MQTT client and build connection
         self.client = mqtt.Client(client_name) 
-        self.client.connect(self.host, self.port)
+        self.client.connect(self.host, self.PORT)
         
         # self.data           = defaultdict(lambda: defaultdict(list))
         # self.data           = self.create_dict()
@@ -54,7 +57,7 @@ class _RosToMqttBridge_(object):
         self.len_data       = 0
 
         # Ros variables
-        self.ros_rate       = rospy.Rate(1000)
+        self.ROS_RATE       = rospy.Rate(1000)
         self.topic          = topic
         self.message_type   = message_lib
         self.message_pkg    = message_pkg
@@ -155,7 +158,6 @@ class _RosToMqttBridge_(object):
         print(s + ' : Waiting for message ...') 
 
     def stop_thread(self, flag):
-        self.stop_thread_flag = flag
         self.client.disconnect()
         # self.client.loop_stop()
         self.ros_timer.cancel()
@@ -168,38 +170,36 @@ class _RosToMqttBridge_(object):
         # Thread for waiting the first message
         self.ros_timer = Timer(5.0, self._start_ros)
         self.ros_timer.start()
-        # self.client.loop_start()
-        # while True:
-        #     if self.stop_thread_flag:
-        #         break
-        #     self.ros_rate.sleep()
-        # print(colored('{Ros-to-Mqtt} Stop to use RosMqttBridge', 'red'))
+
 
 @ray.remote(num_cpus=1) 
 class _MqttToRosBridge_(object):
     def __init__(self, host:str, topic:str, color:str, max_length:int):
-        name        = topic.split('/')[-1]
-        node_name   = ('_').join([name, 'node'])
-        client_name = ('_').join([name, 'client'])
+        if topic == '/imu/data':
+            name        = 'imuData'
+        else:
+            name = topic.split('/')[-1]
+            
+        node_name   = ('_').join([name, 'bridge_node'])
+        client_name = ('_').join([name, 'bridge_client'])
 
         rospy.init_node(node_name, anonymous=True)
 
         # Mqtt variables
         self.host   = host
-        self.port   = 1883
+        self.PORT   = 1883
 
         self.max_length     = max_length
         self.color          = color
         self.topic          = topic
-        self.ros_rate       = rospy.Rate(1000)
+        self.ROS_RATE       = rospy.Rate(1000)
         self.data           = self.create_dict()
         self.count          = 0
-        self.stop_thread_flag   = False
         self.len_data       = 0
 
         # Create mqtt client and build the mqtt connection
         self.client         = mqtt.Client(client_name)
-        self.client.connect(self.host, self.port)
+        self.client.connect(self.host, self.PORT)
 
         # Create mqtt subscriber
         self.client.subscribe(self.topic)
@@ -219,7 +219,6 @@ class _MqttToRosBridge_(object):
         return self.data[topic]
 
     def stop_thread(self, flag:bool):
-        self.stop_thread_flag   = flag
         self.client.disconnect()
         self.client.loop_stop()
         self.mqtt_timer.cancel()
@@ -243,7 +242,7 @@ class _MqttToRosBridge_(object):
         # Receive message for the first time
         if self.count == 0:
             s = topic + ' '*(self.max_length - len(topic))
-            print(colored('{Mqtt-to-Ros} ', self.color) + s + ' -> status : Receiving message') 
+            print(s + ' : Receiving message') 
 
             # Check type of message
             if payload.find('[') == 0 or payload.find('(') == 0 or payload.find(']') == 0 or payload.find(')') == 0:
@@ -290,6 +289,7 @@ class _MqttToRosBridge_(object):
         # print(topic, type(payload_str))
         mqtt_message = self.process_message(topic, payload_str)  
         self._update_data(topic, mqtt_message)
+        self.len_data += 1
 
 
         self.mqtt_timer.cancel()
@@ -298,12 +298,15 @@ class _MqttToRosBridge_(object):
         self.mqtt_timer.start()
 
     def _finished_from_mqtt(self):
+        
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(colored('{Mqtt-to-Ros} ', self.color) + s + ' -> status : Transfer Finished from MQTT and waiting for new message ...')
+        print(s + f' : ({self.len_data} msgs) Transfer Finished from ROS and waiting for new message ...')
+        self.count      = 0
+        self.len_data   = 0
 
     def _start_mqtt(self):
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(colored('{Mqtt-to-Ros} ', self.color) + s + ' -> status : Waiting for message ...') 
+        print(s + ' : Waiting for message ...')
 
     def disconnect(self):
         self.client.loop_stop()
@@ -325,9 +328,8 @@ class RosToMqttBridge(Thread):
 
         # MQTT variables
         self.host           = host
-        self.port           = 1883
-        self.qos            = 0
-        # self.exo_graph_status = False
+        self.PORT           = 1883
+        self.QOS            = 0
         
         # Create the list of topic name and message library name
         self.ros_subscriber = dict()
@@ -416,7 +418,7 @@ class RosToMqttBridge(Thread):
         self.main = main
     
     def add_topic(self, topic:str, message_lib:str):
-        if self.search(self.topic_list, topic):
+        if search(self.topic_lst, topic):
             pass
         else:
             # Add a new topic and message in list
@@ -429,6 +431,7 @@ class RosToMqttBridge(Thread):
             self._create_subscriber(topic, message_lib)
             s = topic + ' '*(self.max_length - len(topic))
             print(colored('{Ros-to-Mqtt} ',self.color) + colored('Add topic -> ','red') + s + ' : message ' + message_lib)
+            self.ros_subscriber[topic].start_subscribe.remote()
     
     def stop_actor(self):
         for t in self.topic_lst:
@@ -451,9 +454,8 @@ class MqttToRosBridge(Thread):
             self._initialize_ray()
 
         self.host       = host
-        self.port       = 1883
+        self.PORT       = 1883
         self.color      = 'yellow'
-        self.stop_thread = False
         self.topic      = topic
         self.data       = dict()
 
