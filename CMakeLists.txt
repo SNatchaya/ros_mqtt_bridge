@@ -115,7 +115,6 @@ catkin_install_python(PROGRAMS
   src/ros_mqtt_bridge/demo.py
   src/ros_mqtt_bridge/bridge.py
   src/ros_mqtt_bridge/tester/mqtt_pub.py
-  src/ros_mqtt_bridge/tester/ros_publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
