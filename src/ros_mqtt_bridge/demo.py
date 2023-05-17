@@ -74,12 +74,18 @@ class Demo():
         # after stopping demo, it will stop bridge as well.
         
         self.t1.stop_actor()
-        time.sleep(1)
+        self.t2.stop_actor()
 
+        time.sleep(1)
+        print('\nLast message in each topic:')
         for i in self.topic_ros['topic']:
-            print(f'{i}  : {self.t1.get_data(i)}')
+            print(f'    {i}  : {self.t1.get_data(i)}')
+
+        t = '/sub'
+        print(f'    {t}  : {self.t2.get_data(t)}')
 
         self.t1.kill_ray()
+        self.t2.kill_ray()
         
         # self.t1.kill_ray()
         sys.exit()
