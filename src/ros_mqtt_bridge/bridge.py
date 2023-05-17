@@ -22,6 +22,7 @@ from collections import defaultdict
 from typing import *
 import psutil
 
+
 def search(lst, condition) -> bool:
     for i in lst:
         if i == condition:
@@ -118,7 +119,9 @@ class _RosToMqttBridge_(object):
     def _ros_callback(self, message, topic:str):
         if self.count == 0:
             s = topic + ' '*(self.max_length - len(topic))
-            print(s + ' : Receiving message') 
+            sen = s + ' : Receiving message' 
+            print(sen)
+
             self.count = 1
     
         # ts          = str(datetime.now().strftime('%H:%M:%S.%f').replace('.',':'))    
@@ -149,21 +152,26 @@ class _RosToMqttBridge_(object):
 
     def _finished_from_ros(self):
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(s + f' : ({self.len_data} msgs) Transfer Finished from ROS and waiting for new message ...')
+        # print(s + f' : ({self.len_data} msgs) Transfer Finished from ROS and waiting for new message ...')
+        sen = s + f' : ({self.len_data} msgs) Transfer finished from ROS and waiting for new message ...'
+        print(sen)
         self.count      = 0
         self.len_data   = 0
 
     def _start_ros(self):
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(s + ' : Waiting for message ...') 
+        sen = s + ' : Waiting for message ...'
+        print(sen)
 
-    def stop_thread(self, flag):
+    def stop_thread(self):
         self.client.disconnect()
         # self.client.loop_stop()
         self.ros_timer.cancel()
 
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(s + ' : Stop to subscribe.')
+        # print(s + ' : Stop to subscribe.')
+        sen = s + ' : Stop to subscribe.'
+        print(sen)
     
     def start_subscribe(self):
 
@@ -217,11 +225,6 @@ class _MqttToRosBridge_(object):
 
     def get_data(self, topic:str) -> defaultdict:
         return self.data[topic]
-
-    def stop_thread(self, flag:bool):
-        self.client.disconnect()
-        self.client.loop_stop()
-        self.mqtt_timer.cancel()
     
     def _convert_mqtt_message(self, payload:str):
         """
@@ -242,7 +245,9 @@ class _MqttToRosBridge_(object):
         # Receive message for the first time
         if self.count == 0:
             s = topic + ' '*(self.max_length - len(topic))
-            print(s + ' : Receiving message') 
+            # print(s + ' : Receiving message') 
+            sen = s + ' : Received message'
+            print(sen)
 
             # Check type of message
             if payload.find('[') == 0 or payload.find('(') == 0 or payload.find(']') == 0 or payload.find(')') == 0:
@@ -300,17 +305,29 @@ class _MqttToRosBridge_(object):
     def _finished_from_mqtt(self):
         
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(s + f' : ({self.len_data} msgs) Transfer Finished from ROS and waiting for new message ...')
+        # print(s + f' : ({self.len_data} msgs) Transfer Finished from ROS and waiting for new message ...')
+        sen = s + f' : ({self.len_data} msgs) Transfer finished from MQTT and waiting for new message ...'
+        print(sen)
         self.count      = 0
         self.len_data   = 0
 
     def _start_mqtt(self):
         s = self.topic + ' '*(self.max_length - len(self.topic))
-        print(s + ' : Waiting for message ...')
+        # print(s + ' : Waiting for message ...')
+        sen = s + ' : Waiting for message ...'
+        print(sen)
 
-    def disconnect(self):
+    def stop_thread(self):
+        
         self.client.loop_stop()
         self.client.disconnect()
+
+        self.mqtt_timer.cancel()
+
+        s = self.topic + ' '*(self.max_length - len(self.topic))
+        # print(s + ' : Stop to subscribe.')
+        sen = s + ' : Stop to subscribe.'
+        print(sen)
     
     def start_subscribe(self):
         self.client.loop_start()
@@ -435,7 +452,7 @@ class RosToMqttBridge(Thread):
     
     def stop_actor(self):
         for t in self.topic_lst:
-            self.ros_subscriber[t].stop_thread.remote(ray.put(True))
+            self.ros_subscriber[t].stop_thread.remote()
 
     def kill_ray(self):
         for t in self.topic_lst:
@@ -512,10 +529,14 @@ class MqttToRosBridge(Thread):
     def get_data(self, topic:str):
         return ray.get(self.ros_publisher[topic].get_data.remote(ray.put(topic)))
     
-    def disconnect(self):
-        for topic in self.topic:
-            self.ros_publisher[topic].disconnect.remote()
-        print(colored('{Mqtt-to-Ros} Client disconnected', 'red'))
+    def stop_actor(self):
+        for t in self.topic:
+            self.ros_publisher[t].stop_thread.remote()
+
+    def kill_ray(self):
+        for t in self.topic:
+            ray.kill(self.ros_publisher[t])
+        print(colored('{_MqttToRosBridge_} Disconnected.', 'red'))
 
     def run(self):
         for topic in self.topic:
